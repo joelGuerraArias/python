@@ -1,0 +1,29 @@
+class Rectangulo:
+  def __init__(self, ancho, alto):
+    self.ancho = ancho
+    self.alto = alto
+    
+
+
+  def calcularArea(self):
+    return self.ancho * self.alto
+
+
+rectangulo1= Rectangulo(25, 14)
+print(rectangulo1.calcularArea())
+
+
+class Triangulo(Rectangulo):
+
+   def __init__(self, ancho, alto, base):
+    super().__init__(ancho,alto)
+    self.base=base
+
+
+   def araTriangulo(self):
+     return (self.ancho * self.alto) /2
+
+
+
+triangulo1 = Triangulo(34,45,3)
+print(triangulo1.araTriangulo())
