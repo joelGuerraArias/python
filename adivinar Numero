@@ -1,0 +1,15 @@
+import random
+
+num1 = int(input("ingrese un numero "))
+num2= random.randint(0,100)
+
+
+contador = 1
+
+while num1 != num2 :
+    if num1 > num2:
+        print("El numero es muy Alto")
+    else: print("El numero es muy Bajo")
+    num1 = int(input("ingrese un numero "))
+    contador = contador + 1
+print("Felicidades, lo hiciste en ",contador, "intentos")
