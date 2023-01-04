@@ -1,0 +1,32 @@
+from tkinter import *
+ventana = Tk()
+ventana.geometry("400x200")
+ventana.title("Mi primer Tkinter")
+lbl1=Label(ventana,text="1er. numero", bg= "yellow", fg="black")
+lbl1.place(x=10,y=10, width=100, height=30)
+
+txt1=Entry(ventana, bg= "pink")
+txt1.place(x=120,y=10, width=100, height=30)
+def fnSumar():
+  n1=int(txt1.get())
+  n2=int(txt2.get())
+  r=n1+n2
+  txt3.delete(0,END)
+  txt3.insert(END, str(r))
+
+
+lbl2=Label(ventana,text="2do. número", bg= "yellow", fg="black")
+lbl2.place(x=10,y=50, width=100, height=30)
+txt2=Entry(ventana, bg= "pink")
+txt2.place(x=120,y=50, width=100, height=30)
+Btn1=Button(ventana, text="Sumar", command=fnSumar)
+Btn1.place(x=230,y=50, width=100, height=30)
+
+
+lbl3=Label(ventana,text="Resultado", bg= "red", fg="White")
+lbl3.place(x=10,y=120, width=100, height=30)
+
+txt3=Entry(ventana, bg= "pink")
+txt3.place(x=120,y=120, width=100, height=30)
+
+ventana.mainloop()
