@@ -1,0 +1,60 @@
+import random
+
+opcionUsuario= input("Ingrese una opcion: Piedra, Papel o Tijera: ")
+
+opciones= ["Piedra", "Papel", "Tijera"]
+dataNumber=0
+opcionComputadora= random.choice(opciones)
+print(f"________Round{dataNumber+1} ________")
+userwins=0
+computerwins=0
+
+while True:
+    
+  
+           
+    if opcionUsuario == opcionComputadora:
+        print("Empate")
+    
+    elif opcionUsuario == "Piedra" and opcionComputadora == "Papel":
+        print("Perdiste")
+        computerwins+=1
+    elif opcionUsuario == "Piedra" and opcionComputadora == "Tijera":
+        print("Ganaste")
+        userwins+=1
+    elif opcionUsuario == "Papel" and opcionComputadora == "Tijera":
+        print("Perdiste")
+        computerwins+=1
+    elif opcionUsuario == "Papel" and opcionComputadora == "Piedra":
+        print("Ganaste")
+        userwins+=1
+    elif opcionUsuario == "Tijera" and opcionComputadora == "Papel":
+        print("Ganaste")
+        userwins+=1
+    elif opcionUsuario == "Tijera" and opcionComputadora == "Piedra":
+        print("Perdiste")
+        computerwins+=1
+
+    print("Computadora: ", opcionComputadora)
+    print("Usuario: ", opcionUsuario)
+    
+    dataNumber+=1
+    print("Computadora: ", computerwins)
+    print("Usuario: ", userwins)
+    
+    if userwins == 2 and computerwins == 1:
+        print("El usuario gano 2 veces y la computadora 1, estas cerca de ganar")
+    
+    if computerwins == 3:
+        print("La computadora gano 3 veces")
+        break
+    elif userwins == 3:
+        print("El usuario gano 3 veces")
+        break
+    else:
+        print(f"________Round{round} ________")
+        opcionUsuario= input("Ingrese una opcion: Piedra, Papel o Tijera: ")
+        opcionComputadora= random.choice(opciones)
+
+    
+    
