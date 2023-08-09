@@ -1,0 +1,42 @@
+import os
+import sqlite3
+
+# Crear el directorio si no existe
+directorio = r"C:\Users\JOEL\Desktop\sqlite"
+if not os.path.exists(directorio):
+    os.makedirs(directorio)
+
+# Ruta al archivo de base de datos en el directorio creado
+ruta_db = r"C:\Users\JOEL\Desktop\sqlite\data1.db"
+
+# Conectar a la base de datos (o crearla si no existe en esa ruta)
+conn = sqlite3.connect(ruta_db)
+
+# Crear un cursor para ejecutar consultas SQL
+cursor = conn.cursor()
+
+# Crear una tabla
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    apellido TEXT NOT NULL
+)
+''')
+
+# Insertar datos
+cursor.execute("INSERT INTO usuarios (nombre, apellido) VALUES (?, ?)", ("Juan", "Pérez"))
+
+# Guardar (commit) los cambios
+conn.commit()
+
+# Consultar datos
+cursor.execute("SELECT * FROM usuarios")
+rows = cursor.fetchall()
+
+for row in rows:
+    print(row)
+
+# Cerrar la conexión
+cursor.close()
+conn.close()
