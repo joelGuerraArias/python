@@ -1,0 +1,45 @@
+import csv
+import os
+import tkinter as tk
+from tkinter import simpledialog, messagebox, filedialog
+
+def save_csv(data):
+    # Obtener la ruta del escritorio
+    desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+    folder_path = os.path.join(desktop, 'CSV')
+    
+    # Crear el folder 'CSV' si no existe
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Pedir al usuario el nombre del archivo
+    filename = filedialog.asksaveasfilename(initialdir=folder_path, title="Guardar como", filetypes=(("CSV files", "*.csv"), ("All files", "*.*")), defaultextension=".csv")
+    
+    if not filename:
+        return
+
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        for row in data:
+            writer.writerow(row)
+
+    messagebox.showinfo("Información", "Archivo CSV guardado con éxito!")
+
+def on_save_button_click():
+    data = text_area.get("1.0", tk.END).strip().split("\n")
+    data = [row.split(",") for row in data]
+    save_csv(data)
+
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Generador de CSV")
+
+# Crear y agregar un área de texto
+text_area = tk.Text(root, height=20, width=50)
+text_area.pack(pady=20)
+
+# Crear y agregar un botón para guardar
+save_button = tk.Button(root, text="Guardar como CSV", command=on_save_button_click)
+save_button.pack(pady=20)
+
+root.mainloop()
