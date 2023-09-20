@@ -1,0 +1,65 @@
+from flask import Flask, render_template, request, redirect, url_for, flash
+import vonage
+
+app = Flask(__name__)
+app.secret_key = 'some_secret_key'
+
+client = vonage.Client(key="a9c4768e", secret="0Bj4Idb33cIVnr8s")
+sms = vonage.Sms(client)
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        to_number = request.form['to']
+        message = request.form['message']
+
+        responseData = sms.send_message(
+            {
+                "from": "SIB BANCOS",
+                "to": to_number,
+                "text": message,
+            }
+        )
+
+        if responseData["messages"][0]["status"] == "0":
+            flash("Mensaje enviado con éxito.")
+        else:
+            flash(f"Error al enviar el mensaje: {responseData['messages'][0]['error-text']}")
+
+        return redirect(url_for('index'))
+
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+template HTML
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enviar SMS con Vonage</title>
+</head>
+<body>
+    <h2>Enviar SMS</h2>
+    <form action="/" method="post">
+        <label for="to">Número de teléfono:</label>
+        <input type="text" name="to" required>
+        <br>
+        <label for="message">Mensaje:</label>
+        <textarea name="message" required></textarea>
+        <br>
+        <input type="submit" value="Enviar">
+    </form>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+</body>
+</html>
