@@ -1,0 +1,24 @@
+import google_cloud_dialogflow
+
+# Crea un agente
+agent = google_cloud_dialogflow.Agent("mi-agente")
+
+# Crea una intención
+intención = agent.intents.create("obtener_gerente")
+intención.training_phrases.add("¿Puedo hablar con el gerente?")
+intención.training_phrases.add("Necesito hablar con el gerente")
+
+# Entrena el chatbot
+agent.train()
+
+# Crea un cliente
+cliente = google_cloud_dialogflow.AgentsClient()
+
+# Inicia una sesión
+sesión = cliente.sessions().start(parent="projects/my-project/agent/mi-agente").execute()
+
+# Envía una consulta
+respuesta = sesión.query("¿Puedo hablar con el gerente?")
+
+# Imprime la respuesta
+print(respuesta.result.fulfillment_text)
