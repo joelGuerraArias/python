@@ -1,0 +1,69 @@
+import openai
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Configuración del sidebar para la clave API
+with st.sidebar:
+    st.markdown(
+        "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)")
+    st.markdown(
+        "[View the source code](https://github.com/streamlit/llm-examples/blob/main/Chatbot.py)")
+
+# Título de la aplicación
+st.title("💬 Chatbot con Visualización de Datos")
+
+# Subida de archivos CSV
+uploaded_file = st.file_uploader("Sube un archivo CSV", type="csv")
+
+# Procesamiento del archivo CSV
+if uploaded_file is not None:
+    # Leer datos del CSV
+    df = pd.read_csv(uploaded_file)
+
+    # Opción para elegir visualización
+    option = st.selectbox("Elige cómo visualizar los datos:", [
+                          'Tabla', 'Gráfico de Pastel'])
+
+    if option == 'Tabla':
+        st.write(df)
+    elif option == 'Gráfico de Pastel':
+        # Asumiendo que el CSV tiene al menos dos columnas
+        if df.shape[1] >= 2:
+            plt.figure(figsize=(10, 6))
+            plt.pie(df[df.columns[1]],
+                    labels=df[df.columns[0]], autopct='%1.1f%%')
+            plt.title("Gráfico de Pastel")
+            st.pyplot(plt)
+        else:
+            st.error(
+                "El CSV no tiene las columnas necesarias para un gráfico de pastel.")
+
+# Chatbot
+# Reemplaza con tu clave API
+openai_api_key = "Api"
+openai.api_key = openai_api_key
+
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
+
+# Entrada del chat
+prompt = st.text_input("Escribe tu mensaje")
+
+# Procesamiento de la entrada del chat
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.write(f"Tú: {prompt}")
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": msg["role"], "content": msg["content"]}
+                      for msg in st.session_state.messages]
+        )
+        assistant_msg = response.choices[0].message
+        st.session_state.messages.append(
+            {"role": "assistant", "content": assistant_msg['content']})
+        st.write(f"Asistente: {assistant_msg['content']}")
+    except Exception as e:
+        st.error(f"Ocurrió un error: {e}")
