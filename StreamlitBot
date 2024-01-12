@@ -1,0 +1,48 @@
+import openai
+import streamlit as st
+
+# Configuración del sidebar para la clave API (opcional en este caso)
+with st.sidebar:
+    st.markdown(
+        "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)")
+    st.markdown(
+        "[View the source code](https://github.com/streamlit/llm-examples/blob/main/Chatbot.py)")
+    st.markdown("[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/llm-examples?quickstart=1)")
+
+# Título de la aplicación
+st.title("💬 Chatbot")
+
+# Inicializar los mensajes en el estado de la sesión si no existen
+if "messages" not in st.session_state:
+    st.session_state["messages"] = [
+        {"role": "assistant", "content": "How can I help you?"}]
+
+# Mostrar los mensajes anteriores
+for msg in st.session_state.messages:
+    st.write(f"{msg['role']}: {msg['content']}")
+
+# Entrada del chat
+prompt = st.text_input("Your message")
+
+# Procesamiento de la entrada del chat
+if prompt:
+    # Clave API directamente en el código para pruebas
+    # ADVERTENCIA: No es seguro. Asegúrate de eliminarla después de las pruebas
+    openai_api_key = "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"
+    openai.api_key = openai_api_key
+
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.write(f"You: {prompt}")
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": msg["role"], "content": msg["content"]}
+                      for msg in st.session_state.messages]
+        )
+        assistant_msg = response.choices[0].message
+        st.session_state.messages.append(
+            {"role": "assistant", "content": assistant_msg['content']})
+        st.write(f"Assistant: {assistant_msg['content']}")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
