@@ -1,0 +1,36 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Título de la aplicación
+st.write("""
+# My first app
+Hello *world!*
+""")
+
+# Subida del archivo CSV
+uploaded_file = st.file_uploader("Cargar archivo CSV", type="csv")
+
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+
+    # Opción para seleccionar entre tabla o gráfico de pastel
+    option = st.radio("Elige cómo visualizar los datos:",
+                      ('Tabla', 'Gráfico de Pastel'))
+
+    if option == 'Tabla':
+        # Mostrar tabla de datos
+        st.table(df)
+    elif option == 'Gráfico de Pastel':
+        # Asegúrate de que tu CSV tiene las columnas adecuadas para un gráfico de pastel
+        if 'Ventas' in df.columns and df.columns[0] != 'Ventas':
+            # Crear y mostrar el gráfico de pastel
+            plt.figure(figsize=(8, 8))
+            plt.pie(df['Ventas'], labels=df[df.columns[0]], autopct='%1.1f%%')
+            plt.title('Distribución de Ventas')
+            st.pyplot(plt)
+        else:
+            st.error(
+                "El archivo CSV debe tener al menos dos columnas: una para etiquetas y otra para valores.")
+else:
+    st.write("Por favor, sube un archivo CSV.")
