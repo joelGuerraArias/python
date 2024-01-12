@@ -1,0 +1,18 @@
+import streamlit as st
+import pandas as pd
+
+st.write("""
+# My first app
+Hello *world!*
+""")
+
+# Widget para subir archivos
+uploaded_file = st.file_uploader("Cargar archivo CSV", type="csv")
+
+if uploaded_file is not None:
+    # Leer el archivo CSV
+    df = pd.read_csv(uploaded_file)
+    # Mostrar el gráfico de líneas con los datos del CSV
+    st.line_chart(df)
+else:
+    st.write("Por favor, sube un archivo CSV.")
