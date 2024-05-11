@@ -1,0 +1,114 @@
+import tkinter as tk
+from tkinter import ttk
+import mysql.connector
+from mysql.connector import Error
+
+def insert_user(nombre, apellido, telefono, correo):
+    """ Inserta un nuevo usuario en la base de datos """
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='1234',
+            database='tu_base_de_datos'
+        )
+        cursor = connection.cursor()
+        query = "INSERT INTO usuarios (nombre, apellido, telefono, correo) VALUES (%s, %s, %s, %s)"
+        cursor.execute(query, (nombre, apellido, telefono, correo))
+        connection.commit()
+        return "Nuevo registro creado exitosamente"
+    except Error as e:
+        return f"Error al insertar datos: {e}"
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def on_submit():
+    nombre = entry_nombre.get()
+    apellido = entry_apellido.get()
+    telefono = entry_telefono.get()
+    correo = entry_correo.get()
+    result = insert_user(nombre, apellido, telefono, correo)
+    text_area.insert(tk.END, result + "\n")
+    entry_nombre.delete(0, tk.END)
+    entry_apellido.delete(0, tk.END)
+    entry_telefono.delete(0, tk.END)
+    entry_correo.delete(0, tk.END)
+
+def find_user():
+    """ Busca un usuario en la base de datos por nombre, apellido, teléfono o correo, insensible a mayúsculas y minúsculas """
+    search_term = entry_search.get().strip()
+    if not search_term:
+        text_area.insert(tk.END, "Ingrese un criterio de búsqueda.\n")
+        return
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='1234',
+            database='tu_base_de_datos'
+        )
+        cursor = connection.cursor()
+        query = """
+        SELECT * FROM usuarios
+        WHERE LOWER(nombre) LIKE LOWER(%s)
+           OR LOWER(apellido) LIKE LOWER(%s)
+           OR LOWER(telefono) LIKE LOWER(%s)
+           OR LOWER(correo) LIKE LOWER(%s)
+        """
+        like_term = f'%{search_term}%'
+        cursor.execute(query, (like_term, like_term, like_term, like_term))
+        result = cursor.fetchone()
+        if result is not None:
+            text_area.insert(tk.END, f"Usuario encontrado: ID={result[0]}, Nombre={result[1]}, Apellido={result[2]}, Teléfono={result[3]}, Correo={result[4]}\n")
+        else:
+            text_area.insert(tk.END, "No se encontró ningún usuario con esos datos.\n")
+    except Error as e:
+        text_area.insert(tk.END, f"Error al buscar datos: {e}\n")
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+    entry_search.delete(0, tk.END)
+
+root = tk.Tk()
+root.title("Registro de Usuarios")
+
+# Creamos el área de texto para mostrar mensajes
+text_area = tk.Text(root, height=10, width=50)
+text_area.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+
+# Añadimos una barra de desplazamiento al área de texto
+scrollbar = ttk.Scrollbar(root, command=text_area.yview)
+scrollbar.grid(row=0, column=2, sticky='ns')
+text_area['yscrollcommand'] = scrollbar.set
+
+# Widgets de entrada
+tk.Label(root, text="Nombre:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+entry_nombre = tk.Entry(root)
+entry_nombre.grid(row=1, column=1, padx=10, pady=5, sticky='ew')
+
+tk.Label(root, text="Apellido:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
+entry_apellido = tk.Entry(root)
+entry_apellido.grid(row=2, column=1, padx=10, pady=5, sticky='ew')
+
+tk.Label(root, text="Teléfono:").grid(row=3, column=0, padx=10, pady=5, sticky='w')
+entry_telefono = tk.Entry(root)
+entry_telefono.grid(row=3, column=1, padx=10, pady=5, sticky='ew')
+
+tk.Label(root, text="Correo:").grid(row=4, column=0, padx=10, pady=5, sticky='w')
+entry_correo = tk.Entry(root)
+entry_correo.grid(row=4, column=1, padx=10, pady=5, sticky='ew')
+
+submit_btn = tk.Button(root, text="Agregar Usuario", command=on_submit)
+submit_btn.grid(row=5, columnspan=2, padx=10, pady=10)
+
+tk.Label(root, text="Buscar por cualquier dato:").grid(row=6, column=0, padx=10, pady=5, sticky='w')
+entry_search = tk.Entry(root)
+entry_search.grid(row=6, column=1, padx=10, pady=5, sticky='ew')
+
+search_btn = tk.Button(root, text="Buscar Usuario", command=find_user)
+search_btn.grid(row=7, columnspan=2, padx=10, pady=10)
+
+root.mainloop()
