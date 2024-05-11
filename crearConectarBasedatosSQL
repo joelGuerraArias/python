@@ -1,0 +1,74 @@
+import mysql.connector
+from mysql.connector import Error
+
+def create_database_and_table():
+    """ Crea la base de datos y la tabla si no existen """
+    try:
+        # Conexión al servidor de MySQL
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='1234'  # Asegúrate de usar la contraseña correcta
+        )
+
+        cursor = connection.cursor()
+        # Crear base de datos si no existe
+        cursor.execute("CREATE DATABASE IF NOT EXISTS tu_base_de_datos")
+        cursor.execute("USE tu_base_de_datos")
+        
+        # Crear tabla si no existe
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100),
+                apellido VARCHAR(100),
+                telefono VARCHAR(15),
+                correo VARCHAR(100)
+            )
+        """)
+        print("Base de datos y tabla aseguradas.")
+
+    except Error as e:
+        print("Error durante la creación de la base de datos o tabla:", e)
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def insert_user(nombre, apellido, telefono, correo):
+    """ Inserta un nuevo usuario en la base de datos """
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='1234',  # Asegúrate de usar la contraseña correcta
+            database='tu_base_de_datos'
+        )
+        query = "INSERT INTO usuarios (nombre, apellido, telefono, correo) VALUES (%s, %s, %s, %s)"
+        data = (nombre, apellido, telefono, correo)
+
+        cursor = connection.cursor()
+        cursor.execute(query, data)
+        connection.commit()
+
+        print("Nuevo registro creado exitosamente")
+
+    except Error as e:
+        print("Error durante la conexión o ejecución:", e)
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a MySQL cerrada")
+
+# Asegurar que la base de datos y la tabla existen
+create_database_and_table()
+
+# Datos del usuario
+nombre = "Juan"
+apellido = "Pérez"
+telefono = "1234567890"
+correo = "juan.perez@example.com"
+
+# Insertar usuario
+insert_user(nombre, apellido, telefono, correo)
