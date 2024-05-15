@@ -1,0 +1,63 @@
+import streamlit as st
+import requests
+
+# Configura la URL de la API de Flask
+API_URL = 'http://127.0.0.1:8000/desarrolladores'
+
+def get_developers():
+    response = requests.get(API_URL)
+    return response.json()
+
+def add_developer(developer):
+    response = requests.post(API_URL, json=developer)
+    return response.json()
+
+def delete_developer(developer_id):
+    response = requests.delete(f"{API_URL}/{developer_id}")
+    return response.json()
+
+# Interfaz de Streamlit
+st.title('Gestión de Desarrolladores')
+
+# Mostrar la lista de desarrolladores
+st.header('Lista de Desarrolladores')
+developers = get_developers()
+for dev in developers:
+    st.subheader(f"{dev['nombre']} {dev['apellido']}")
+    st.write(f"Edad: {dev['edad']}")
+    st.write(f"País: {dev['pais']}")
+    st.write(f"Habilidades: {', '.join(dev['habilidades'])}")
+    st.write(f"Nivel de Inglés: {dev['nivel_ingles']}")
+    if st.button(f"Eliminar {dev['nombre']}", key=dev['id']):
+        delete_developer(dev['id'])
+        st.experimental_rerun()
+
+# Formulario para agregar un nuevo desarrollador
+st.header('Agregar Nuevo Desarrollador')
+with st.form(key='add_developer_form'):
+    id = st.number_input('ID', min_value=1, step=1)
+    nombre = st.text_input('Nombre')
+    apellido = st.text_input('Apellido')
+    edad = st.number_input('Edad', min_value=0, step=1)
+    pais = st.text_input('País')
+    habilidades = st.text_input('Habilidades (separadas por comas)')
+    nivel_ingles = st.selectbox('Nivel de Inglés', ['Básico', 'Intermedio', 'Avanzado'])
+    submit_button = st.form_submit_button(label='Agregar')
+
+    if submit_button:
+        developer = {
+            "id": id,
+            "nombre": nombre,
+            "apellido": apellido,
+            "edad": edad,
+            "pais": pais,
+            "habilidades": [habilidad.strip() for habilidad in habilidades.split(',')],
+            "nivel_ingles": nivel_ingles
+        }
+        add_developer(developer)
+        st.success(f"Desarrollador {nombre} agregado exitosamente!")
+        st.experimental_rerun()
+
+# Ejecutar la aplicación Streamlit
+if __name__ == '__main__':
+    st.run()
