@@ -1,0 +1,123 @@
+import anthropic
+import json
+
+# Configuración de la API Key
+ANTHROPIC_API_KEY = ""
+
+# Inicializar el cliente de Anthropic
+client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+# Base de datos local de ciudades y su clima
+weather_db = {
+    "Nueva York": {"temp": 22, "description": "Parcialmente nublado"},
+    "Londres": {"temp": 18, "description": "Lluvioso"},
+    "Tokio": {"temp": 28, "description": "Soleado"},
+    "París": {"temp": 20, "description": "Nublado"},
+    "Sídney": {"temp": 25, "description": "Soleado"},
+    "Moscú": {"temp": 15, "description": "Nublado"},
+    "Río de Janeiro": {"temp": 30, "description": "Soleado"},
+    "Cairo": {"temp": 35, "description": "Despejado"},
+    "Mumbai": {"temp": 32, "description": "Húmedo"},
+    "Berlín": {"temp": 19, "description": "Parcialmente nublado"},
+    "Toronto": {"temp": 21, "description": "Soleado"},
+    "Singapur": {"temp": 31, "description": "Tormentas eléctricas"},
+    "Ámsterdam": {"temp": 17, "description": "Lluvioso"},
+    "Dubai": {"temp": 38, "description": "Caluroso y despejado"},
+    "Ciudad de México": {"temp": 23, "description": "Parcialmente nublado"},
+    "Estocolmo": {"temp": 16, "description": "Nublado"},
+    "Bangkok": {"temp": 33, "description": "Húmedo y nublado"},
+    "Lisboa": {"temp": 24, "description": "Soleado"},
+    "Viena": {"temp": 21, "description": "Despejado"},
+    "Seúl": {"temp": 26, "description": "Parcialmente nublado"}
+}
+
+class ClaudeBot:
+    def __init__(self):
+        self.conversation_history = []
+        self.system_prompt = """Eres Claude, un asistente AI amigable y útil. Responde de manera concisa y clara. 
+        Tienes acceso a una base de datos de clima para 20 ciudades. Cuando te pregunten sobre el clima en una ciudad específica, 
+        proporciona la información si está disponible en la base de datos. Si la ciudad no está en la base de datos, 
+        indica que no tienes información sobre esa ciudad en particular."""
+
+    def get_weather(self, city):
+        return weather_db.get(city, None)
+
+    def chat_with_claude(self, query):
+        try:
+            # Verificar si la consulta es sobre el clima
+            for city in weather_db.keys():
+                if city.lower() in query.lower():
+                    weather = self.get_weather(city)
+                    if weather:
+                        weather_info = f"El clima en {city} es: Temperatura {weather['temp']}°C, {weather['description']}"
+                        query += f"\n\nInformación del clima: {weather_info}"
+                    break
+
+            self.conversation_history.append({"role": "user", "content": query})
+            
+            message = client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=1000,
+                system=self.system_prompt,
+                messages=self.conversation_history
+            )
+            
+            response = message.content[0].text
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return response
+
+        except Exception as e:
+            return f"Error inesperado: {str(e)}"
+
+    def clear_history(self):
+        self.conversation_history = []
+        return "Historial de conversación borrado."
+
+    def save_history(self, filename):
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(self.conversation_history, f, ensure_ascii=False, indent=2)
+            return f"Historial guardado en {filename}"
+        except Exception as e:
+            return f"Error al guardar el historial: {str(e)}"
+
+    def load_history(self, filename):
+        try:
+            with open(filename, 'r', encoding='utf-8') as f:
+                self.conversation_history = json.load(f)
+            return f"Historial cargado desde {filename}"
+        except Exception as e:
+            return f"Error al cargar el historial: {str(e)}"
+
+def main():
+    bot = ClaudeBot()
+    print("Bienvenido al bot de Claude con base de datos local de clima. Comandos especiales:")
+    print("  /salir - Terminar la conversación")
+    print("  /limpiar - Borrar el historial de la conversación")
+    print("  /guardar [nombre_archivo] - Guardar el historial de la conversación")
+    print("  /cargar [nombre_archivo] - Cargar un historial de conversación")
+    print("  /ciudades - Mostrar la lista de ciudades disponibles")
+    print("Puedes preguntar sobre el clima en cualquiera de las ciudades de la base de datos.")
+    
+    while True:
+        user_input = input("Tú: ").strip()
+        
+        if user_input.lower() == '/salir':
+            print("¡Hasta luego!")
+            break
+        elif user_input.lower() == '/limpiar':
+            print(bot.clear_history())
+        elif user_input.lower().startswith('/guardar '):
+            filename = user_input.split(maxsplit=1)[1]
+            print(bot.save_history(filename))
+        elif user_input.lower().startswith('/cargar '):
+            filename = user_input.split(maxsplit=1)[1]
+            print(bot.load_history(filename))
+        elif user_input.lower() == '/ciudades':
+            print("Ciudades disponibles:", ", ".join(weather_db.keys()))
+        else:
+            response = bot.chat_with_claude(user_input)
+            print("Claude:", response)
+
+if __name__ == "__main__":
+    main()
