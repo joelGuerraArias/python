@@ -1,0 +1,135 @@
+import anthropic
+import pandas as pd
+import gradio as gr
+import io
+import pinecone
+
+# Configurar la clave API de Anthropic (Claude)
+client = anthropic.Client(api_key="")
+
+# Configurar la clave API de Pinecone
+pinecone.init(api_key="YOUR_PINECONE_API_KEY", environment="us-west1-gcp")
+
+# Variable global para almacenar el DataFrame cargado
+df = None
+
+# Variable para almacenar el historial completo de preguntas y respuestas
+historial_completo = ""
+
+# Función para cargar el CSV y mostrar las primeras 7 filas
+def cargar_csv(file):
+    global df
+    df = pd.read_csv(file.name)  # Cargar el CSV en un DataFrame de pandas
+    primeras_filas = df.head(7)  # Obtener las primeras 7 filas del DataFrame
+    return f"CSV cargado con éxito. El archivo tiene {df.shape[0]} filas y {df.shape[1]} columnas.", primeras_filas
+
+# Función para guardar el CSV en Pinecone
+def guardar_csv_pinecone():
+    if df is None:
+        return "Primero carga un archivo CSV."
+    # Convertir el DataFrame en una lista de vectores para Pinecone
+    index = pinecone.Index("csv-database")
+    vectors = [
+        (str(i), row.tolist()) for i, row in df.iterrows()
+    ]
+    # Subir los vectores a Pinecone
+    index.upsert(vectors)
+    return "CSV guardado en la base de datos de Pinecone con éxito."
+
+# Función para borrar el CSV de Pinecone
+def borrar_csv_pinecone():
+    index = pinecone.Index("csv-database")
+    index.delete(delete_all=True)
+    return "CSV borrado de la base de datos de Pinecone con éxito."
+
+# Función para detectar si la respuesta es tabular (SQL-like) y convertirla en DataFrame
+def es_respuesta_tabular(respuesta):
+    lineas = respuesta.strip().split("\n")
+    if len(lineas) > 2 and all("," in linea for linea in lineas):  # Si hay más de dos líneas y todas usan comas
+        try:
+            data = io.StringIO(respuesta)
+            df_respuesta = pd.read_csv(data)
+            return df_respuesta
+        except Exception:
+            return None
+    return None
+
+# Función para responder preguntas sobre el CSV cargado
+def responder_pregunta(pregunta):
+    global historial_completo
+    if df is None:
+        return "Primero carga un archivo CSV.", "", None
+    
+    # Convertir el DataFrame a una cadena para que Claude pueda analizarlo
+    datos = df.to_string()
+
+    # Incluir el historial de preguntas y respuestas anteriores en el prompt
+    prompt = f"Tengo el siguiente conjunto de datos:\n{datos}\n\nHistorial de preguntas y respuestas anteriores:\n{historial_completo}\n\nPregunta actual: {pregunta}\nPor favor responde de manera concisa considerando las respuestas anteriores."
+    
+    # Realizar la solicitud a la API de Anthropic (Claude)
+    response = client.completions.create(
+        model="claude-v1",
+        prompt=f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}",
+        max_tokens_to_sample=500
+    )
+
+    # Extraer la respuesta de Claude
+    respuesta = response.completion.strip()
+
+    # Verificar si la respuesta tiene un formato tabular
+    df_respuesta = es_respuesta_tabular(respuesta)
+    
+    # Agregar la nueva pregunta y respuesta al principio del historial (más reciente primero)
+    historial_completo = f"**Pregunta:** {pregunta}\n**Respuesta:** {respuesta}\n\n" + historial_completo
+
+    if df_respuesta is not None and len(df_respuesta) > 0:
+        # Si es tabular y tiene más de 0 elementos, mostrar la tabla con formato adecuado
+        return historial_completo, "", gr.DataFrame.update(value=df_respuesta, visible=True)
+    else:
+        # Devolver el historial de respuestas actualizado y limpiar el campo de la pregunta
+        return historial_completo, "", gr.DataFrame.update(visible=False)
+
+# Crear la interfaz de Gradio
+with gr.Blocks() as demo:
+    gr.Markdown("# Cargar CSV y Hacer Preguntas usando Anthropic API y pandas")
+    
+    # Entrada para cargar el archivo CSV
+    cargar_csv_input = gr.File(label="Sube tu archivo CSV")
+    
+    # Botón para cargar el CSV
+    cargar_button = gr.Button("Cargar CSV")
+    
+    # Botón para guardar el CSV en Pinecone
+    guardar_button = gr.Button("Guardar CSV en Pinecone")
+    
+    # Botón para borrar el CSV de Pinecone
+    borrar_button = gr.Button("Borrar CSV de Pinecone")
+    
+    # Salida para mostrar el estado de la carga del CSV
+    csv_output = gr.Textbox(label="Estado del CSV")
+    
+    # Mostrar las primeras 7 filas del CSV
+    primeras_filas_output = gr.Dataframe(label="Primeras 7 filas del CSV")
+    
+    # Entrada para hacer una pregunta sobre los datos del CSV
+    pregunta_input = gr.Textbox(label="Haz una pregunta sobre los datos")
+    
+    # Botón para hacer la pregunta
+    pregunta_button = gr.Button("Preguntar")
+    
+    # Salida para mostrar el historial de preguntas y respuestas
+    respuesta_output = gr.Markdown(label="Historial de Preguntas y Respuestas")
+
+    # Salida para mostrar respuestas tabulares (en formato DataFrame)
+    respuesta_tabular_output = gr.Dataframe(label="Respuesta Tabular", visible=False)
+
+    # Asociar funciones a los botones
+    cargar_button.click(cargar_csv, inputs=cargar_csv_input, outputs=[csv_output, primeras_filas_output])
+    guardar_button.click(guardar_csv_pinecone, inputs=None, outputs=csv_output)
+    borrar_button.click(borrar_csv_pinecone, inputs=None, outputs=csv_output)
+    pregunta_button.click(responder_pregunta, 
+                          inputs=pregunta_input, 
+                          outputs=[respuesta_output, pregunta_input, respuesta_tabular_output])
+
+# Lanzar la aplicación Gradio
+demo.launch()
